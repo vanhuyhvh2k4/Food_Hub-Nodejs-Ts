@@ -197,7 +197,7 @@ class CheckoutController {
         try {
             const userId: number = req.user.id;
 
-            db.query('SELECT food_order.id, food_item.name, food_item.image, shop.name AS shopName, shop.isTick, food_order.status, food_order.quantity, ((food_order.quantity * food_item.price) + shop.shipFee) AS price FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status != "canceled"', ([userId]), (err: any, result: any) => {
+            db.query('SELECT food_order.id, food_item.name, food_item.image, shop.name AS shopName, shop.isTick, food_order.status, food_order.quantity, ((food_order.quantity * food_item.price) + shop.shipFee) AS price FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status IN ("waiting confirm", "peraring", "on the way") ORDER BY food_order.timestamp DESC', ([userId]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
 
@@ -260,7 +260,7 @@ class CheckoutController {
         try {
             const userId: number = req.user.id;
 
-            db.query('SELECT food_order.id, food_item.name, food_item.image, food_item.price, shop.name AS shopName, shop.shipFee, shop.isTick, food_order.status, food_order.quantity, food_order.timestamp FROM `food_order` JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status IN ("canceled", "finished")', [userId], (err: any, results: any) => {
+            db.query('SELECT food_order.id, food_item.name, food_item.image, food_item.price, shop.name AS shopName, shop.shipFee, shop.isTick, food_order.status, food_order.quantity, food_order.timestamp FROM `food_order` JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status IN ("canceled", "finished") ORDER BY food_order.timestamp DESC', [userId], (err: any, results: any) => {
                 if (err) throw err;
                 if (results.length) {
                     const response = results.map((item: any) => {

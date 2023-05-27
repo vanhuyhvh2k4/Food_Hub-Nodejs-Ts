@@ -39,7 +39,7 @@ class SearchController {
             const userId: number = req.user.id;
             const keyword: string = req.query.keyword;
 
-            db.query('SELECT food_item.id, shop.name AS shopName, shop.place, food_item.name, food_item.image, food_item.description, food_item.price, IF (food_like.id IS null, 0, 1) as liked FROM food_item JOIN shop ON shop.id = food_item.shopId LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? WHERE food_item.name LIKE ?', ([userId, `%${keyword}%`]), (err: any, result: any) => {
+            db.query('SELECT food_item.id, shop.name AS shopName, shop.place, food_item.name, food_item.image, food_item.description, food_item.price, IF(food_like.id IS NULL, 0, 1) AS liked, COUNT(food_order.id) AS numOrders FROM food_item JOIN shop ON shop.id = food_item.shopId LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? LEFT JOIN food_order ON food_order.foodId = food_item.id AND food_order.status = "finished" WHERE food_item.name LIKE ? GROUP BY food_item.id ORDER BY numOrders DESC', ([userId, `%${keyword}%`]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
                     res.status(200).json({
