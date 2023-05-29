@@ -53,6 +53,30 @@ class ratingController {
             });
         }
     }
+
+    //[POST] baseUrl/rating/review/:orderId
+    review (req: any, res: any) {
+        try {
+            const orderId: number = req.params.orderId;
+            const rating: number = req.body.rating;
+            const comment: string = req.body.comment;
+
+            db.query("INSERT INTO review(orderId, rating, comment, timestamp) VALUES (?, ?, ?, CURRENT_TIMESTAMP())", ([orderId, rating, comment]), (err: any, result: any) => {
+                if (err) throw err;
+                if (result) {
+                    res.status(200).json({
+                        code: 'rating/review.success',
+                        message: 'review successfully'
+                    });
+                }
+            })
+        } catch (error: any) {
+            res.status(500).json({
+                code: 'rating/review.error',
+                error: error.message
+            });
+        }
+    }
 }
 
 export default new ratingController;

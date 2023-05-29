@@ -196,8 +196,25 @@ class CheckoutController {
     myOrder(req: any, res: any) {
         try {
             const userId: number = req.user.id;
+            const option: string = req.query.option;
+            let filter: string;
 
-            db.query('SELECT food_order.id, food_item.name, food_item.image, shop.name AS shopName, shop.isTick, food_order.status, food_order.quantity, ((food_order.quantity * food_item.price) + shop.shipFee) AS price FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status IN ("waiting confirm", "peraring", "on the way") ORDER BY food_order.timestamp DESC', ([userId]), (err: any, result: any) => {
+            switch (option) {
+                case "waiting confirm":
+                    filter = `("waiting confirm")`;
+                    break;
+                case "preparing":
+                    filter = `("preparing")`;
+                    break;
+                case "on the way":
+                    filter = `("on the way")`;
+                    break;
+                default:
+                    filter = `("waiting confirm", "preparing", "on the way")`;
+                    break;
+            }
+
+            db.query(`SELECT food_order.id, food_item.name, food_item.image, shop.name AS shopName, shop.isTick, food_order.status, food_order.quantity, ((food_order.quantity * food_item.price) + shop.shipFee) AS price FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status IN ${filter} ORDER BY food_order.timestamp DESC`, ([userId]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
 
@@ -259,21 +276,36 @@ class CheckoutController {
     getOrderHistory(req: any, res: any) {
         try {
             const userId: number = req.user.id;
+            const option: string = req.query.option;
+            let filter:string;
 
-            db.query('SELECT food_order.id, food_item.name, food_item.image, food_item.price, shop.name AS shopName, shop.shipFee, shop.isTick, food_order.status, food_order.quantity, food_order.timestamp FROM `food_order` JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.userId = ? AND food_order.status IN ("canceled", "finished") ORDER BY food_order.timestamp DESC', [userId], (err: any, results: any) => {
+            switch (option) {
+                case "finished":
+                    filter = `("finished")`;
+                    break;
+                case "canceled":
+                    filter = `("canceled")`;
+                    break;
+                default:
+                    filter = `("finished", "canceled")`;
+                    break;
+            }
+
+            db.query(`SELECT IF(review.id IS NULL, 0, 1) AS isRated, food_order.id, food_item.name, food_item.image, food_item.price, shop.name AS shopName, shop.shipFee, shop.isTick, food_order.status, food_order.quantity, food_order.timestamp FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId LEFT JOIN review ON review.orderId = food_order.id WHERE food_order.userId = ? AND food_order.status IN ${filter} ORDER BY food_order.timestamp DESC`, [userId], (err: any, results: any) => {
                 if (err) throw err;
                 if (results.length) {
                     const response = results.map((item: any) => {
-                        const id = item.id;
-                        const name = item.name;
-                        const image = item.image;
-                        const shopName = item.shopName;
-                        const isTick = item.isTick;
-                        const status = item.status;
-                        const quantity = item.quantity;
+                        const id: number = item.id;
+                        const name: string = item.name;
+                        const image: string = item.image;
+                        const shopName: string = item.shopName;
+                        const isTick: boolean = item.isTick;
+                        const status: string = item.status;
+                        const isRated: boolean = item.isRated;
+                        const quantity: number = item.quantity;
                         const time = new Date(item.timestamp);
-                        const formatTime = time.toDateString().replace(',', '')
-                        const price = (quantity * item.price) + item.shipFee;
+                        const formatTime: string = time.toDateString().replace(',', '')
+                        const price: number = (quantity * item.price) + item.shipFee;
                         return {
                             id,
                             name,
@@ -282,6 +314,7 @@ class CheckoutController {
                             quantity,
                             isTick,
                             status,
+                            isRated,
                             time: formatTime,
                             price
                         }

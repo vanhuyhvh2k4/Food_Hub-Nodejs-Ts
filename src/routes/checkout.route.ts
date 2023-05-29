@@ -18,7 +18,7 @@ router.post('/order', verifyToken.verifyTokenJWT, CheckoutController.order);
 
 router.get('/order', verifyToken.verifyTokenJWT, CheckoutController.myOrder);
 
-router.delete('/order/:orderId', verifyToken.verifyTokenJWT, checkStatusOfOrder, CheckoutController.cancel);
+router.delete('/order/:orderId', verifyToken.verifyTokenJWT, checkStatusOfOrder.isBought, CheckoutController.cancel);
 
 router.get('/order/history', verifyToken.verifyTokenJWT, CheckoutController.getOrderHistory);
 
