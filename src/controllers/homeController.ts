@@ -36,9 +36,8 @@ class homeController {
     getShop(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const foodType: string = req.query.foodType;
 
-            db.query('SELECT shop.id, shop.name, shop.image, shop.isTick, shop.shipFee, shop.timeShipping, IF(shop_like.id IS NULL, 0, 1) as liked FROM shop INNER JOIN food_item ON shop.id = food_item.shopId INNER JOIN food_category ON food_item.foodCategoryId = food_category.id LEFT JOIN shop_like ON shop.id = shop_like.shopId AND shop_like.userId = ? WHERE food_category.name = ? GROUP BY shop.name', ([userId, foodType]), (err: any, result: any) => {
+            db.query('SELECT COUNT(review.id) AS num_reviews, ROUND(AVG(review.rating), 1) AS avgRating, shop.id, shop.name, shop.image, shop.place, shop.isTick, shop.shipFee, IF(shop_like.id IS NULL, 0, 1) as liked FROM shop  JOIN food_item ON shop.id = food_item.shopId  JOIN food_order ON food_item.id = food_order.foodId LEFT JOIN review ON food_order.id = review.orderId  LEFT JOIN shop_like ON shop_like.shopId = shop.id AND shop_like.userId = ? GROUP BY shop.id ORDER BY num_reviews DESC, avgRating DESC LIMIT 5', ([userId]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
                     res.status(200).json({

@@ -110,12 +110,11 @@ class ShopController {
             const name = req.body.name;
             const address = req.body.address;
             const shipFee = req.body.shipFee;
-            const timeShipping = req.body.timeShipping;
 
             const avatar = await getDownloadURL(snapshot1.ref);
             const background = await getDownloadURL(snapshot2.ref);
 
-            db.query('INSERT INTO `shop`(`userId`, `name`, `image`, `background`, `place`, `shipFee`, `timeShipping`) VALUES (?,?,?,?,?,?,?)', ([userId, name, avatar, background, address, shipFee, timeShipping]), (err: any, result: any) => {
+            db.query('INSERT INTO `shop`(`userId`, `name`, `image`, `background`, `place`, `shipFee`) VALUES (?,?,?,?,?,?)', ([userId, name, avatar, background, address, shipFee]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result) {
                     res.status(200).json({
@@ -222,7 +221,7 @@ class ShopController {
     getFavoriteShop(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            db.query('SELECT shop.id, shop.name, shop.image, shop.isTick, shop.shipFee, shop.timeShipping FROM shop JOIN shop_like ON shop_like.shopId = shop.id JOIN user ON user.id = shop_like.userId WHERE shop_like.userId = ?', ([userId]), (err: any, result: any) => {
+            db.query('SELECT COUNT(review.id) AS num_reviews, ROUND(AVG(review.rating), 1) AS avgRating, shop.id, shop.name, shop.image, shop.place, shop.isTick, shop.shipFee, food_item.price, IF(shop_like.id IS NULL, 0, 1) as liked FROM shop  JOIN food_item ON shop.id = food_item.shopId  JOIN food_order ON food_item.id = food_order.foodId LEFT JOIN review ON food_order.id = review.orderId  LEFT JOIN shop_like ON shop_like.shopId = shop.id WHERE shop_like.userId = ? GROUP BY shop.id ORDER BY num_reviews DESC, avgRating DESC LIMIT 5', ([userId]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
                     res.status(200).json({
