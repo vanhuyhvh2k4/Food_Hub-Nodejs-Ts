@@ -1,12 +1,12 @@
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyD1e3zMR6E9FlE4iOI6x5uymaXPFrh0rSs",
-    authDomain: "foodhub-nodejs-51b06.firebaseapp.com",
-    projectId: "foodhub-nodejs-51b06",
-    storageBucket: "foodhub-nodejs-51b06.appspot.com",
-    messagingSenderId: "950246072859",
-    appId: "1:950246072859:web:91d049f97121387a7d4ebe"
-  };
+  apiKey: "AIzaSyBPMAbX6uTf5HB1CPvAHqWsFwggVryMIKc",
+  authDomain: "food-hub-75785.firebaseapp.com",
+  projectId: "food-hub-75785",
+  storageBucket: "food-hub-75785.appspot.com",
+  messagingSenderId: "1053162742391",
+  appId: "1:1053162742391:web:38017c5d1196becc729c72"
+};
   
   export default firebaseConfig;
   

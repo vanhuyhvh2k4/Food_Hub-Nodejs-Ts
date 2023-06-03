@@ -345,7 +345,7 @@ class CheckoutController {
         try {
             const orderId: number = req.params.orderId
 
-            db.query('SELECT food_order.id, food_item.name, food_item.image, food_item.price, food_order.quantity, shop.shipFee FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.id = ?', [orderId], (err: any, result: any) => {
+            db.query('SELECT food_order.id, food_item.name, food_item.image, food_item.price, food_order.quantity, food_order.status, shop.name AS shopName, shop.place, shop.isTick, shop.shipFee, shop.image AS shopImage FROM food_order JOIN food_item ON food_item.id = food_order.foodId JOIN shop ON shop.id = food_item.shopId WHERE food_order.id = ?', [orderId], (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
                     const totalOfFood = result[0].price * result[0].quantity;

@@ -221,7 +221,7 @@ class ShopController {
     getFavoriteShop(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            db.query('SELECT COUNT(review.id) AS num_reviews, ROUND(AVG(review.rating), 1) AS avgRating, shop.id, shop.name, shop.image, shop.place, shop.isTick, shop.shipFee, food_item.price, IF(shop_like.id IS NULL, 0, 1) as liked FROM shop  JOIN food_item ON shop.id = food_item.shopId  JOIN food_order ON food_item.id = food_order.foodId LEFT JOIN review ON food_order.id = review.orderId  LEFT JOIN shop_like ON shop_like.shopId = shop.id WHERE shop_like.userId = ? GROUP BY shop.id ORDER BY num_reviews DESC, avgRating DESC LIMIT 5', ([userId]), (err: any, result: any) => {
+            db.query('SELECT COUNT(review.id) AS num_reviews, ROUND(AVG(review.rating), 1) AS avgRating, shop.id, shop.name, shop.image, shop.place, shop.isTick, shop.shipFee, food_item.price, IF(shop_like.id IS NULL, 0, 1) as liked FROM shop  JOIN food_item ON shop.id = food_item.shopId LEFT JOIN food_order ON food_item.id = food_order.foodId LEFT JOIN review ON food_order.id = review.orderId  LEFT JOIN shop_like ON shop_like.shopId = shop.id WHERE shop_like.userId = ? GROUP BY shop.id ORDER BY num_reviews DESC, avgRating DESC LIMIT 5', ([userId]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
                     res.status(200).json({
