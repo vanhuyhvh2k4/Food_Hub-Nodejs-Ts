@@ -58,7 +58,7 @@ class AuthControlller {
             const email: string = req.body.email;
             const password: string = req.body.password;
             const passwordHash: string = md5(password);
-            const query = `SELECT * FROM user WHERE email = "${email}" AND password = "${passwordHash}"`;
+            const query = `SELECT id, avatar, fullName, email, phone, address FROM user WHERE email = "${email}" AND password = "${passwordHash}" AND type = 0`;
             let accessToken: string;
             let refreshToken: string;
 
@@ -261,6 +261,50 @@ class AuthControlller {
             });
         }
 
+    }
+
+    //[POST] baseUrl/auth/social
+    async socialSignIn(req: any, res: any) {
+        try {
+            const fullName: string = req.body.fullName;
+            const email: string = req.body.email;
+            const avatar: string = req.body.avatar;
+            const user = req.user;
+            if (req.isExist) {
+                res.status(200).json({
+                    data: {
+                        currentUser: user[0],
+                        accessToken: JWTUntils.generateAccessToken(user[0]),
+                        refreshToken: JWTUntils.generateRefreshToken(user[0])
+                    }
+                });
+            } else {
+                await db.promise().query("INSERT INTO user(fullName, email, avatar, type) VALUES (?, ?, ?, 1)", ([fullName, email, avatar]));
+
+                db.query("SELECT id, avatar, fullName, email, phone, address FROM user WHERE email = ? AND type = 1", ([email]), (err: any, result: any) => {
+                    if (err) throw err;
+                    if (result.length) {
+                        res.status(200).json({
+                            data: {
+                                currentUser: result[0],
+                                accessToken: JWTUntils.generateAccessToken(result[0]),
+                                refreshToken: JWTUntils.generateRefreshToken(result[0])
+                            }
+                        });
+                    } else {
+                        res.status(404).json({
+                            code: 'auth/login.notFound',
+                            message: 'email is not exist'
+                        });
+                    }
+                });
+            }
+        } catch (error: any) {
+            res.status(500).json({
+                code: 'auth/login.error',
+                error: error.message
+            })
+        }
     }
 }
 

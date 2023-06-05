@@ -25,6 +25,8 @@ router.post('/register', authMiddleware.checkEmail, authController.register);
 
 router.post('/login', authController.login);
 
+router.post('/social', CheckEmailMiddleware.checkEmailSocial, authController.socialSignIn);
+
 router.post('/token', authController.refreshToken);
 
 router.patch('/profile/:userId', verifyToken.verifyTokenJWT, upload.single('avatar'), multerErrorMiddleware, authController.changeAvatar);
