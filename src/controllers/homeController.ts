@@ -134,5 +134,4 @@ class homeController {
         }
     }
 }
-
 export default new homeController;
