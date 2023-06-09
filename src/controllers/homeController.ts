@@ -53,7 +53,7 @@ class homeController {
             }
             const queryGetAll = `SELECT COUNT(review.id) AS num_reviews, ROUND(AVG(review.rating), 1) AS avgRating, food_category.name AS foodType, shop.id, shop.name, shop.image, shop.place, shop.isTick, shop.shipFee, IF(shop_like.id IS NULL, 0, 1) as liked FROM shop  JOIN food_item ON shop.id = food_item.shopId LEFT JOIN food_order ON food_item.id = food_order.foodId JOIN food_category ON food_category.id = food_item.foodCategoryId LEFT JOIN review ON food_order.id = review.orderId  LEFT JOIN shop_like ON shop_like.shopId = shop.id AND shop_like.userId = ? GROUP BY shop.id ORDER BY num_reviews DESC, avgRating DESC ${type !== 'all' ? `LIMIT 5` : ``}`;
             
-            let result: any = await db.promise().query(queryGetAll, ([1]));
+            let result: any = await db.promise().query(queryGetAll, ([userId]));
 
             //pagination varriables
             const pageIndex: number = req.query.page || null;
@@ -106,7 +106,7 @@ class homeController {
     getFood(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const foodType: string = req.query.foodType;
+            const foodType: string = req.query.foodType.toLowerCase().trim();
 
             db.query('SELECT shop.name AS shopName, food_item.id, food_item.name, food_item.image, food_item.description, food_item.price, shop.place, IF (food_like.id IS null, 0, 1) as liked, COUNT(food_order.id) AS numOrders FROM food_item JOIN food_category ON food_item.foodCategoryId = food_category.id JOIN shop ON food_item.shopId = shop.id LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? LEFT JOIN food_order ON food_order.foodId = food_item.id AND food_order.status = "finished" WHERE food_category.name = ? GROUP BY food_item.id ORDER BY numOrders DESC', ([userId, foodType]), (err: any, result: any) => {
                 if (err) throw err;

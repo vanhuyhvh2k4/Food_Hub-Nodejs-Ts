@@ -11,8 +11,8 @@ class FoodController {
     //[GET] baseURL/food/info
     async getFood(req: any, res: any) {
         try {
-            const foodName: string = req.query.foodName;
-            const shopName: string = req.query.shopName;
+            const foodName: string = req.query.foodName.toLowerCase().trim();
+            const shopName: string = req.query.shopName.toLowerCase().trim();
 
             const numOfFood: any = await db.promise().query('SELECT COUNT(food_item.id) AS num FROM food_item JOIN shop ON shop.id = food_item.shopId WHERE shop.name = ?', [shopName]);
 
@@ -94,10 +94,10 @@ class FoodController {
     async newFood(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const name: string = req.body.name;
+            const name: string = req.body.name.toLowerCase().trim();
             const categoryId: number = req.body.categoryId;
-            const description: string = req.body.description;
-            const price: number = req.body.price;
+            const description: string = req.body.description.toLowerCase().trim();
+            const price: number = req.body.price.trim();
             const storage = getStorage();
             const storageRef = ref(storage, `food_image/${userId}-${name}${path.extname(req.file.originalname)}`);
 

@@ -5,7 +5,7 @@ class SearchController {
     //[POST]baseURL/search/
     search(req: any, res: any) {
         try {
-            const foodName: string = req.query.foodName;
+            const foodName: string = req.query.foodName.toLowerCase().trim();
             if (foodName.length) {
                 db.query('SELECT id, name, image FROM food_item WHERE name LIKE ? GROUP BY name', [`%${foodName}%`], (err: any, result: any) => {
                     if (err) throw err;
@@ -37,7 +37,7 @@ class SearchController {
     result(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const keyword: string = req.query.keyword;
+            const keyword: string = req.query.keyword.toLowerCase().trim();
 
             db.query('SELECT food_item.id, shop.name AS shopName, shop.place, food_item.name, food_item.image, food_item.description, food_item.price, IF(food_like.id IS NULL, 0, 1) AS liked, COUNT(food_order.id) AS numOrders FROM food_item JOIN shop ON shop.id = food_item.shopId LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? LEFT JOIN food_order ON food_order.foodId = food_item.id AND food_order.status = "finished" WHERE food_item.name LIKE ? GROUP BY food_item.id ORDER BY numOrders DESC', ([userId, `%${keyword}%`]), (err: any, result: any) => {
                 if (err) throw err;

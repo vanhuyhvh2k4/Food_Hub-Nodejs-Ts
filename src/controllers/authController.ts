@@ -27,14 +27,14 @@ class AuthControlller {
     //[POST] BaseURL/auth/register
     register(req: any, res: any) {
         try {
-            const fullName: string = req.body.fullName;
-            const email: string = req.body.email;
-            const password: string = req.body.password;
+            const fullName: string = (req.body.fullName).toLowerCase().trim();
+            const email: string = req.body.email.toLowerCase().trim();
+            const password: string = req.body.password.trim();
             const passwordHash: string = md5(password);
             db.query(
                 'INSERT INTO user (fullName, email, password) VALUES (?, ?, ?)',
                 [fullName, email, passwordHash],
-                (error, results, fields) => {
+                (error, results) => {
                     if (error) {
                         throw error;
                     }
@@ -55,8 +55,8 @@ class AuthControlller {
     //[POST] BaseURL/auth/login
     login(req: any, res: any) {
         try {
-            const email: string = req.body.email;
-            const password: string = req.body.password;
+            const email: string = req.body.email.toLowerCase().trim();
+            const password: string = req.body.password.trim();
             const passwordHash: string = md5(password);
             const query = `SELECT id, avatar, fullName, email, phone, address FROM user WHERE email = "${email}" AND password = "${passwordHash}" AND type = 0`;
             let accessToken: string;
@@ -158,9 +158,9 @@ class AuthControlller {
     changeProfile(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const fullName: string = req.body.fullName;
-            const phone: string = req.body.phone;
-            const address: string = req.body.address;
+            const fullName: string = req.body.fullName.toLowerCase().trim();
+            const phone: string = req.body.phone.trim();
+            const address: string = req.body.address.toLowerCase().trim();
 
             db.query('UPDATE user SET fullName = ?, phone = ?, address = ? WHERE id = ?', ([fullName, phone, address, userId]), (err, result) => {
                 if (err) throw err;
@@ -188,7 +188,7 @@ class AuthControlller {
     //[POST] baseURL/auth/password
     sendMail(req: any, res: any) {
         try {
-            const email: string = req.body.email;
+            const email: string = req.body.email.toLowerCase().trim();
             const emailToken: string = JWTUntils.generateEmailToken(email);
             sendMail(email, "Reset password", `
         <div style="width: 100%; background-color: #fff;">
@@ -235,8 +235,8 @@ class AuthControlller {
     //[GET] baseUrl/auth/password/:email
     reset(req: any, res: any) {
         try {
-            const email: string = req.params.email;
-            const newPassword: string = req.body.password;
+            const email: string = req.params.email.toLowerCase().trim();
+            const newPassword: string = req.body.password.trim();
             const hashPassword: string = md5(newPassword);
 
             db.query('UPDATE user SET password= ? WHERE user.email = ?', ([hashPassword, email]), (err, result) => {
@@ -266,9 +266,9 @@ class AuthControlller {
     //[POST] baseUrl/auth/social
     async socialSignIn(req: any, res: any) {
         try {
-            const fullName: string = req.body.fullName;
-            const email: string = req.body.email;
-            const avatar: string = req.body.avatar;
+            const fullName: string = req.body.fullName.toLowerCase().trim();
+            const email: string = req.body.email.toLowerCase().trim();
+            const avatar: string = req.body.avatar.trim();
             const user = req.user;
             if (req.isExist) {
                 res.status(200).json({

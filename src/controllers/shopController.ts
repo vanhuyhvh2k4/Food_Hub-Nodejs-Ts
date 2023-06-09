@@ -12,7 +12,7 @@ class ShopController {
     //[GET] baseURL/shop/info
     getInfo(req: any, res: any) {
         try {
-            const shopName: string = req.query.shopName;
+            const shopName: string = req.query.shopName.toLowerCase().trim();
 
             db.query('SELECT shop.id, shop.name, shop.image, shop.background, shop.place, shop.isTick, COUNT(food_item.id) as quantity FROM food_item JOIN shop ON shop.id = food_item.shopId WHERE shop.name = ?', ([shopName]), (err: any, result: any) => {
                 if (err) throw err;
@@ -42,7 +42,7 @@ class ShopController {
     getFood(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const shopName: string = req.query.shopName;
+            const shopName: string = req.query.shopName.toLowerCase().trim();
             db.query('SELECT food_item.id, food_item.name, food_item.image, food_item.description, food_item.price, IF (food_like.id IS null, 0, 1) AS liked FROM food_item JOIN shop ON shop.id = food_item.shopId LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? WHERE shop.name = ?', ([userId, shopName]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
@@ -72,7 +72,7 @@ class ShopController {
     //[POST] baseUrl/shop/checkShopName
     checkShopName(req: any, res: any) {
         try {
-            const shopName: string = req.body.shopName;
+            const shopName: string = req.body.shopName.toLowerCase().trim();
             db.query('SELECT * FROM shop WHERE shop.name = ?', ([shopName]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {
@@ -107,9 +107,9 @@ class ShopController {
             //upload the image
             const snapshot1 = await uploadBytesResumable(storageRef1, req.files['avatar'][0].buffer);
             const snapshot2 = await uploadBytesResumable(storageRef2, req.files['background'][0].buffer);
-            const name = req.body.name;
-            const address = req.body.address;
-            const shipFee = req.body.shipFee;
+            const name = req.body.name.toLowerCase().trim();
+            const address = req.body.address.toLowerCase().trim();
+            const shipFee = req.body.shipFee.trim();
 
             const avatar = await getDownloadURL(snapshot1.ref);
             const background = await getDownloadURL(snapshot2.ref);

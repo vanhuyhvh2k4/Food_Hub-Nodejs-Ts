@@ -196,7 +196,7 @@ class CheckoutController {
     myOrder(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const option: string = req.query.option;
+            const option: string = req.query.option.trim();
             let filter: string;
 
             switch (option) {
@@ -276,7 +276,7 @@ class CheckoutController {
     getOrderHistory(req: any, res: any) {
         try {
             const userId: number = req.user.id;
-            const option: string = req.query.option;
+            const option: string = req.query.option.trim();
             let filter:string;
 
             switch (option) {
