@@ -6,12 +6,16 @@ import {
     uploadBytesResumable,
     deleteObject
 } from 'firebase/storage'
-import db from '../config/db.config';
-import JWTUntils from '../utils/jwt';
-import md5 from 'md5';
 import path from 'path'
-import sendMail from '../utils/mailer';
 import 'dotenv/config';
+
+import sendMail from '../utils/mailer';
+import JWTUntils from '../utils/jwt';
+import {
+    checkPassword,
+    hashPassword
+} from '../utils/bcrypt';
+import User from '../Models/User';
 
 class AuthControlller {
     //[POST] baseUrl/auth
@@ -25,25 +29,26 @@ class AuthControlller {
     }
 
     //[POST] BaseURL/auth/register
-    register(req: any, res: any) {
+    async register(req: any, res: any) {
         try {
-            const fullName: string = (req.body.fullName).toLowerCase().trim();
-            const email: string = req.body.email.toLowerCase().trim();
-            const password: string = req.body.password.trim();
-            const passwordHash: string = md5(password);
-            db.query(
-                'INSERT INTO user (fullName, email, password) VALUES (?, ?, ?)',
-                [fullName, email, passwordHash],
-                (error, results) => {
-                    if (error) {
-                        throw error;
-                    }
-                    res.status(200).json({
-                        code: 'auth/register.success',
-                        message: 'Your account has been registered'
-                    })
-                }
-            );
+            let fullName: string = (req.body.fullName).toLowerCase().trim();
+            let email: string = req.body.email.toLowerCase().trim();
+            let password: string = req.body.password.trim();
+
+            //Hash password
+            let passwordHashed: string = await hashPassword(password);
+
+            //Create a new user in database
+            await User.create({
+                fullName: fullName,
+                email: email,
+                password: passwordHashed
+            });
+
+            res.status(200).json({
+                code: 'auth/register.success',
+                message: 'Your account has been registered'
+            })
         } catch (error: any) {
             res.status(500).json({
                 code: 'auth/register.error',
@@ -53,26 +58,31 @@ class AuthControlller {
     }
 
     //[POST] BaseURL/auth/login
-    login(req: any, res: any) {
+    async login(req: any, res: any) {
         try {
-            const email: string = req.body.email.toLowerCase().trim();
-            const password: string = req.body.password.trim();
-            const passwordHash: string = md5(password);
-            const query = `SELECT id, avatar, fullName, email, phone, address FROM user WHERE email = "${email}" AND password = "${passwordHash}" AND type = 0`;
+            let email: string = req.body.email.toLowerCase().trim();
+            let password: string = req.body.password.trim();
             let accessToken: string;
             let refreshToken: string;
 
-            db.query(query, (error, results: any) => {
-                if (error) throw error;
+            //Get data from database
+            let user: any = await User.findOne({
+                where: {
+                    email,
+                }
+            });
 
-                if (results.length) {
-                    accessToken = JWTUntils.generateAccessToken(results[0])
-                    refreshToken = JWTUntils.generateRefreshToken(results[0])
+            if (user) {
+                //Check if password is correct
+                let isCorrect: boolean = checkPassword(password, user.password);
+
+                if (isCorrect) {
+                    //create access token and refresh token
+                    accessToken = JWTUntils.generateAccessToken(user)
+                    refreshToken = JWTUntils.generateRefreshToken(user)
                     res.status(200).json({
                         code: 'auth/login.success',
-                        message: 'login successful',
                         data: {
-                            currentUser: results[0],
                             accessToken,
                             refreshToken
                         }
@@ -83,7 +93,7 @@ class AuthControlller {
                         message: 'Email or password is incorrect'
                     })
                 }
-            })
+            }
         } catch (error: any) {
             res.status(500).json({
                 code: 'auth/login.error',
@@ -94,13 +104,13 @@ class AuthControlller {
 
     //[POST] BaseURL/auth/token
     refreshToken(req: any, res: any) {
-        const refreshToken: string = req.body.refreshToken;
+        let refreshToken: string = req.body.refreshToken;
         if (!refreshToken) res.status(401).json('you are not authenticated');
         jwt.verify(refreshToken, process.env.JWT_REFRESHTOKEN_SECRET!, (err: any, user: any) => {
             if (err) res.status(403).json('token is invalid');
 
-            const newAccessToken = JWTUntils.generateAccessToken(user);
-            const newRefreshToken = JWTUntils.generateRefreshToken(user);
+            let newAccessToken: string = JWTUntils.generateAccessToken(user);
+            let newRefreshToken: string = JWTUntils.generateRefreshToken(user);
             res.status(200).json({
                 data: {
                     accessToken: newAccessToken,
@@ -113,37 +123,39 @@ class AuthControlller {
     //[PATCH] baseUrl/auth/profile/:userId
     async changeAvatar(req: any, res: any) {
         try {
-            const storage = getStorage();
-            const userId: number = req.user.id;
+            let storage = getStorage();
+            let userId: number = req.user.id;
 
-            const user: any = await db.promise().query('SELECT avatar FROM user WHERE id = ?', [userId]);
-            const oldAvatarUrl: string = user[0].avatar;
-            const hasOldAvatar: boolean = !!oldAvatarUrl;
+            let user: any = await User.findOne({
+                where: {
+                    id: userId
+                }
+            });
+            let oldAvatarUrl: string = user.avatar;
+            let hasOldAvatar: boolean = !!oldAvatarUrl;
 
             if (hasOldAvatar) {
                 // Delete old image with same name
-                const oldStorageRef = ref(storage, `user_avatar/${userId + path.extname(req.file.originalname)}`);
+                let oldStorageRef = ref(storage, `user_avatar/${userId + path.extname(req.file.originalname)}`);
                 await deleteObject(oldStorageRef);
             }
 
             //upload new image
-            const storageReft = ref(storage, `user_avatar/${userId + path.extname(req.file.originalname)}`);
-            const snapshot = await uploadBytesResumable(storageReft, req.file.buffer);
-            const url: string = await getDownloadURL(snapshot.ref);
+            let storageRef = ref(storage, `user_avatar/${userId + path.extname(req.file.originalname)}`);
+            let snapshot = await uploadBytesResumable(storageRef, req.file.buffer);
+            let url: string = await getDownloadURL(snapshot.ref);
 
-            db.query('UPDATE user SET avatar = ? WHERE id = ?', ([url, userId]), (err, result) => {
-                if (err) throw err;
-                if (result) {
-                    res.status(200).json({
-                        code: 'auth/changeAvatar.success',
-                        message: 'Successfully changed',
-                    })
-                } else {
-                    res.status(404).json({
-                        code: 'auth/changeAvatar.notFound',
-                        message: 'not found user'
-                    })
+            await User.update({
+                avatar: url
+            }, {
+                where: {
+                    id: userId
                 }
+            });
+
+            res.status(200).json({
+                code: 'auth/changeAvatar.success',
+                message: 'Successfully changed',
             })
         } catch (error: any) {
             res.status(500).json({
@@ -155,26 +167,26 @@ class AuthControlller {
     }
 
     //[PUT] baseUrl/auth/profile/:userId
-    changeProfile(req: any, res: any) {
+    async changeProfile(req: any, res: any) {
         try {
-            const userId: number = req.user.id;
-            const fullName: string = req.body.fullName.toLowerCase().trim();
-            const phone: string = req.body.phone.trim();
-            const address: string = req.body.address.toLowerCase().trim();
+            let userId: number = req.user.id;
+            let fullName: string = req.body.fullName.toLowerCase().trim();
+            let phone: string = req.body.phone.trim();
+            let address: string = req.body.address.toLowerCase().trim();
 
-            db.query('UPDATE user SET fullName = ?, phone = ?, address = ? WHERE id = ?', ([fullName, phone, address, userId]), (err, result) => {
-                if (err) throw err;
-                if (result) {
-                    res.status(200).json({
-                        code: 'auth/changeProfile.success',
-                        message: 'Successfully changed',
-                    })
-                } else {
-                    res.status(404).json({
-                        code: 'auth/changeProfile.notFound',
-                        message: 'not found user'
-                    })
+            await User.update({
+                fullName,
+                phone,
+                address
+            }, {
+                where: {
+                    id: userId
                 }
+            });
+
+            res.status(200).json({
+                code: 'auth/changeProfile.success',
+                message: 'Successfully changed',
             });
         } catch (error: any) {
             res.status(500).json({
@@ -188,8 +200,8 @@ class AuthControlller {
     //[POST] baseURL/auth/password
     sendMail(req: any, res: any) {
         try {
-            const email: string = req.body.email.toLowerCase().trim();
-            const emailToken: string = JWTUntils.generateEmailToken(email);
+            let email: string = req.body.email.toLowerCase().trim();
+            let emailToken: string = JWTUntils.generateEmailToken(email);
             sendMail(email, "Reset password", `
         <div style="width: 100%; background-color: #fff;">
     <header style="background-color: #333; padding: 12px; color: #fff; display: flex; justify-content: end;">
@@ -215,8 +227,7 @@ class AuthControlller {
         <hr width="100%" style="margin-top: 24px;">
     </main>
 </div>
-        `)
-            // <a href="${process.env.APP_URL}/forgot/reset/${email}?token=${emailToken}">Reset password</a>
+        `);
             res.status(200).json({
                 code: 'password/sendMail.success',
                 message: 'we sent your email successfully',
@@ -226,32 +237,29 @@ class AuthControlller {
         } catch (error: any) {
             res.status(500).json({
                 code: 'password/sendMail.error',
-
                 error: error.message
             })
         }
     }
 
     //[GET] baseUrl/auth/password/:email
-    reset(req: any, res: any) {
+    async reset(req: any, res: any) {
         try {
-            const email: string = req.params.email.toLowerCase().trim();
-            const newPassword: string = req.body.password.trim();
-            const hashPassword: string = md5(newPassword);
+            let email: string = req.params.email.toLowerCase().trim();
+            let newPassword: string = req.body.password.trim();
+            let passwordHashed: string = await hashPassword(newPassword);
 
-            db.query('UPDATE user SET password= ? WHERE user.email = ?', ([hashPassword, email]), (err, result) => {
-                if (err) throw err;
-                if (result) {
-                    res.status(200).json({
-                        code: 'password/reset.success',
-                        message: 'changed your password successfully'
-                    })
-                } else {
-                    res.status(404).json({
-                        code: 'password/reset.notFound',
-                        message: 'email not found'
-                    })
+            User.update({
+                password: passwordHashed
+            }, {
+                where: {
+                    email
                 }
+            });
+
+            res.status(200).json({
+                code: 'password/reset.success',
+                message: 'changed your password successfully'
             })
         } catch (error: any) {
             res.status(500).json({
@@ -266,10 +274,11 @@ class AuthControlller {
     //[POST] baseUrl/auth/social
     async socialSignIn(req: any, res: any) {
         try {
-            const fullName: string = req.body.fullName.toLowerCase().trim();
-            const email: string = req.body.email.toLowerCase().trim();
-            const avatar: string = req.body.avatar.trim();
-            const user = req.user;
+            let fullName: string = req.body.fullName.toLowerCase().trim();
+            let email: string = req.body.email.toLowerCase().trim();
+            let avatar: string = req.body.avatar.trim();
+            let user = req.user;
+            // check if has already signed in return token else create a new account and return token
             if (req.isExist) {
                 res.status(200).json({
                     data: {
@@ -279,25 +288,33 @@ class AuthControlller {
                     }
                 });
             } else {
-                await db.promise().query("INSERT INTO user(fullName, email, avatar, type) VALUES (?, ?, ?, 1)", ([fullName, email, avatar]));
+                await User.create({
+                    fullName,
+                    email,
+                    avatar,
+                    type: 1
+                });
 
-                db.query("SELECT id, avatar, fullName, email, phone, address FROM user WHERE email = ? AND type = 1", ([email]), (err: any, result: any) => {
-                    if (err) throw err;
-                    if (result.length) {
-                        res.status(200).json({
-                            data: {
-                                currentUser: result[0],
-                                accessToken: JWTUntils.generateAccessToken(result[0]),
-                                refreshToken: JWTUntils.generateRefreshToken(result[0])
-                            }
-                        });
-                    } else {
-                        res.status(404).json({
-                            code: 'auth/login.notFound',
-                            message: 'email is not exist'
-                        });
+                let user: any = await User.findOne({
+                    where: {
+                        email,
+                        type: 1
                     }
                 });
+
+                if (user) {
+                    res.status(200).json({
+                        data: {
+                            accessToken: JWTUntils.generateAccessToken(user),
+                            refreshToken: JWTUntils.generateRefreshToken(user)
+                        }
+                    });
+                } else {
+                    res.status(404).json({
+                        code: 'auth/login.notFound',
+                        message: 'email is not exist'
+                    });
+                }
             }
         } catch (error: any) {
             res.status(500).json({
