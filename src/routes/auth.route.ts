@@ -2,10 +2,9 @@ import express from 'express';
 import multer from 'multer';
 const router = express.Router();
 import authController from '../controllers/authController';
-import authMiddleware from '../middleware/auth.middleware';
+import emailMiddleWare from '../middleware/Email.middleware';
 import verifyToken from '../middleware/verifyToken.middleware';
 import multerErrorMiddleware from '../middleware/multerError.middleware';
-import CheckEmailMiddleware from '../middleware/checkEmail.middleware';
 
 const fileFilter = (req: any, file: any, cb: any) => {
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/webp') {
@@ -21,11 +20,11 @@ const upload = multer({storage: multer.memoryStorage(), fileFilter})
 
 router.post('/', verifyToken.verifyTokenJWT, authController.verifyToken);
 
-router.post('/register', authMiddleware.checkEmail, authController.register);
+router.post('/register', emailMiddleWare.checkEmail, authController.register);
 
 router.post('/login', authController.login);
 
-router.post('/social', CheckEmailMiddleware.checkEmailSocial, authController.socialSignIn);
+router.post('/social', emailMiddleWare.checkEmail, authController.socialSignIn);
 
 router.post('/token', authController.refreshToken);
 
@@ -33,7 +32,7 @@ router.patch('/profile/:userId', verifyToken.verifyTokenJWT, upload.single('avat
 
 router.put('/profile/:userId', verifyToken.verifyTokenJWT, authController.changeProfile);
 
-router.post('/password', CheckEmailMiddleware.checkHasMail, authController.sendMail);
+router.post('/password', emailMiddleWare.checkEmail, authController.sendMail);
 
 router.patch('/password/:email', verifyToken.verifyTokenMail, authController.reset);
 
