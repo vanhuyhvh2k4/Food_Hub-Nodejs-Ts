@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
+import "dotenv/config";
 
-const saltRounds: number = 10;
+const saltRounds: number = parseInt(process.env.SALT_ROUNDS!);
 
 export let hashPassword = (password: string) => {
     const salt = bcrypt.genSaltSync(saltRounds);

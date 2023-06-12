@@ -230,7 +230,7 @@ class AuthControlller {
     
                 You are receiving this email because you requested to reset the password for your account on <b>FOOD HUB</b>. Please click the link below to reset your password:
                 </p>
-            <a href="${process.env.APP_URL}/forgot/reset/${email}?token=${emailToken}" style="background-color: rgb(124, 124, 239); border: none; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">SET PASSWORD</a>
+            <a href="${process.env.FRONTEND_URL}/forgot/reset/${email}?token=${emailToken}" style="background-color: rgb(124, 124, 239); border: none; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">SET PASSWORD</a>
             <p style="text-align: justify; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
                 If you did not request to reset your password, please ignore this email. If you have any issues, please contact us for assistance.
                 Best regards, <br>

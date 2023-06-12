@@ -1,10 +1,9 @@
-// import express from 'express';
-const express = require('express');
+import express from 'express';
 const app = express();
 const http = require("http").Server(app);
 const io = require("socket.io")(http, {
     cors: {
-      origin: "http://localhost:8080",
+      origin: process.env.FRONTEND_URL!,
       methods: ["GET", "POST", "PUT", "PATCH", "DELELTE"]
     }
 });
@@ -12,12 +11,13 @@ import cors from 'cors';
 import routes from './routes/index';
 import firebaseConfig from './config/firebase.config';
 import {initializeApp} from "firebase/app";
+import "dotenv/config";
 
 // const app: any = express();
-const port: number = 3000;
+const PORT: number = parseInt(process.env.PORT!) || 3000;
 let corsOptions: object = {
-    origin: 'http://localhost:8080',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+    origin: process.env.FRONTEND_URL!,
+    optionsSuccessStatus: 200
 }
 
 io.on('connection', (socket: any) => {
@@ -40,6 +40,6 @@ app.use(express.json());
 routes(app);
 
 //initialize port
-http.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
+http.listen(PORT, () => {
+    console.log(`Example app listening on port ${PORT}`)
 })

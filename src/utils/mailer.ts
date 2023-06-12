@@ -3,22 +3,14 @@ import mailConfig from '../config/mailer.config';
 
 const sendMail = (to: string, subject: string, htmlContent: string) => {
     const transporter: any = nodeMailer.createTransport({
-        // host: mailConfig.HOST,
-        // port: mailConfig.PORT,
-        // service: "gmail",
-        // secure: false, // true for 465, false for other ports
-        // auth: {
-        //   user: mailConfig.USERNAME, // generated ethereal user
-        //   pass: mailConfig.PASSWORD, // generated ethereal password
-        // },
-        host: "smtp.ethereal.email",
-        port: 587,
-        service: "gmail",
-        secure: false,
+        host: mailConfig.HOST,
+        port: mailConfig.PORT,
+        service: mailConfig.SERVICE,
+        secure: false, // true for 465, false for other ports
         auth: {
-            user: "vanhuyhvh2004@gmail.com",
-            pass: "pwvnsbnplaqdcxtj"
-        }
+          user: mailConfig.USERNAME, // generated ethereal user
+          pass: mailConfig.PASSWORD, // generated ethereal password
+        },
     });
 
     const options = {
@@ -30,4 +22,4 @@ const sendMail = (to: string, subject: string, htmlContent: string) => {
     return transporter.sendMail(options);
 }
 
-export default sendMail
+export default sendMail;
