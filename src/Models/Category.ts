@@ -1,8 +1,8 @@
 import sequelize from "../config/sequelize.config";
-import { Model, DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize';
+import Food from "./Food";
 
-class Category extends Model {}
-Category.init({
+const Category = sequelize.define("Category", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -14,8 +14,8 @@ Category.init({
   }
 }, 
 {
-    sequelize,
-    modelName: 'category',
+    modelName: 'Category',
+    tableName: "categories",
     indexes: [
         {
             unique: true,

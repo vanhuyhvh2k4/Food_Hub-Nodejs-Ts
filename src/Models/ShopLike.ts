@@ -1,10 +1,9 @@
 import sequelize from "../config/sequelize.config";
-import { Model, DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize';
 import User from "./User";
 import Shop from "./Shop";
 
-class ShopLike extends Model {}
-ShopLike.init({
+const ShopLike = sequelize.define("ShopLike", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -18,9 +17,14 @@ ShopLike.init({
         type: DataTypes.INTEGER,
         allowNull: false
     }
-}, { sequelize, modelName: 'shop_like' });
+}, { modelName: 'ShopLike', tableName: "shop_likes" });
 
-ShopLike.belongsTo(User, { foreignKey: "userId"});
-ShopLike.belongsTo(Shop, { foreignKey: "shopId"});
+User.hasMany(ShopLike, {foreignKey: "userId"});
+
+ShopLike.belongsTo(User, {foreignKey: "userId", targetKey: "id"});
+
+Shop.hasMany(ShopLike, {foreignKey: "shopId"});
+
+ShopLike.belongsTo(Shop, {foreignKey: "shopId", targetKey: "id"});
 
 export default ShopLike;

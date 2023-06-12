@@ -1,10 +1,10 @@
 import sequelize from "../config/sequelize.config";
-import { Model, DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize';
 import User from "./User";
 import Food from "./Food";
+import Review from "./Review";
 
-class Order extends Model {}
-Order.init({
+const Order = sequelize.define("Order", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -27,9 +27,14 @@ Order.init({
         allowNull: false,
         defaultValue: 'waiting confirm'
     }
-}, { sequelize, modelName: 'order' });
+}, { modelName: 'Order', tableName: "orders" });
 
-Order.belongsTo(User, {foreignKey: "userId"});
-Order.belongsTo(Food, {foreignKey: "foodId"});
+Food.hasMany(Order, {foreignKey: "foodId"});
+
+Order.belongsTo(Food, {foreignKey: "foodId", targetKey: "id"});
+
+User.hasMany(Order, {foreignKey: "userId"});
+
+Order.belongsTo(User, {foreignKey: "userId", targetKey: "id"});
 
 export default Order;

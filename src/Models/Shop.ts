@@ -1,9 +1,8 @@
 import sequelize from "../config/sequelize.config";
-import { Model, DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize';
 import User from "./User";
 
-class Shop extends Model {}
-Shop.init({
+const  Shop = sequelize.define("Shop", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -38,18 +37,20 @@ Shop.init({
     type: DataTypes.FLOAT,
     allowNull: false,
   }
-}, 
-{ 
-    sequelize,
-    modelName: 'shop',
-    indexes: [
-        {
-            unique: true,
-            fields: ['name']
-        }
-    ]
+},
+{
+  modelName: "Shop",
+  tableName: "shops",
+  indexes: [
+      {
+          unique: true,
+          fields: ['name']
+      }
+  ]
 });
 
-Shop.belongsTo(User, {foreignKey: 'userId'});
+
+User.hasOne(Shop, {foreignKey: "userId"})
+Shop.belongsTo(User, {foreignKey: "userId", targetKey: "id"});
 
 export default Shop;

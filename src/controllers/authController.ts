@@ -38,6 +38,7 @@ class AuthControlller {
             //Hash password
             let passwordHashed: string = await hashPassword(password);
 
+            //check if email already exists
             if (isExist) {
                 res.status(409).json({
                     code: 'auth/register.conflict',
@@ -300,9 +301,8 @@ class AuthControlller {
             if (isExist) {
                 res.status(200).json({
                     data: {
-                        currentUser: user[0],
-                        accessToken: JWTUntils.generateAccessToken(user[0]),
-                        refreshToken: JWTUntils.generateRefreshToken(user[0])
+                        accessToken: JWTUntils.generateAccessToken(user),
+                        refreshToken: JWTUntils.generateRefreshToken(user)
                     }
                 });
             } else {
@@ -310,7 +310,7 @@ class AuthControlller {
                     fullName,
                     email,
                     avatar,
-                    type: 1
+                    type: true
                 });
 
                 let user: any = await User.findOne({
@@ -329,8 +329,8 @@ class AuthControlller {
                     });
                 } else {
                     res.status(404).json({
-                        code: 'auth/login.notFound',
-                        message: 'email is not exist'
+                        code: 'auth/social.notFound',
+                        message: 'User not found'
                     });
                 }
             }

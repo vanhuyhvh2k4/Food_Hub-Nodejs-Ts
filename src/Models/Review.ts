@@ -1,9 +1,8 @@
 import sequelize from "../config/sequelize.config";
-import { Model, DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize';
 import Order from "./Order";
 
-class Review extends Model {}
-Review.init({
+const Review = sequelize.define("Review", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -21,8 +20,10 @@ Review.init({
         type: DataTypes.TEXT,
         allowNull: false
     }
-}, { sequelize, modelName: 'review' });
+}, { modelName: 'Review', tableName: "reviews" });
 
-Review.belongsTo(Order, {foreignKey: "orderId"});
+Order.hasOne(Review, {foreignKey: "orderId"});
+
+Review.belongsTo(Order, {foreignKey: "orderId", targetKey: "id"});
 
 export default Review;

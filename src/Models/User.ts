@@ -1,9 +1,8 @@
 import sequelize from '../config/sequelize.config';
-import {Model, DataTypes} from 'sequelize';
+import {DataTypes} from 'sequelize';
 
-class User extends Model {}
-User.init({
-    id: {
+const User = sequelize.define("User", {
+     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
@@ -37,15 +36,14 @@ User.init({
         defaultValue: false
     }
 },
-{ 
-    sequelize, 
-    modelName: 'User',
-    indexes:[
+{
+    tableName: "users",
+    indexes: [
         {
             unique: true,
-            fields: ['email']
-        },
-    ] 
+            fields: ["email"]
+        }
+    ]
 });
 
 export default User;

@@ -1,10 +1,10 @@
 import sequelize from "../config/sequelize.config";
-import { Model, DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize';
 import Shop from "./Shop";
 import Category from "./Category";
+import Order from "./Order";
 
-class Food extends Model {}
-Food.init({
+const Food = sequelize.define("Food", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -36,14 +36,19 @@ Food.init({
   }
 },
 {
-    sequelize, 
-    modelName: 'food',
+    modelName: 'Food',
+    tableName: "foods",
     indexes: [{
         fields: ['name', 'price']
     }] 
 });
 
-Food.belongsTo(Shop, {foreignKey: 'shopId'});
-Food.belongsTo(Category, {foreignKey: 'categoryId'});
+Shop.hasMany(Food, {foreignKey: "shopId"});
+
+Food.belongsTo(Shop, {foreignKey: "shopId", targetKey: "id"});
+
+Category.hasMany(Food, {foreignKey: "categoryId"});
+
+Food.belongsTo(Category, {foreignKey: "categoryId", targetKey: "id"});
 
 export default Food;

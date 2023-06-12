@@ -13,6 +13,7 @@ const authMiddleware = {
 
             if (user) {
                 req.isExist = true;
+                req.user = user;
                 next();
             } else {
                 req.isExist = false;
