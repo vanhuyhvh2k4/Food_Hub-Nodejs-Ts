@@ -4,159 +4,262 @@ import {
     uploadBytesResumable,
     getDownloadURL
 } from 'firebase/storage'
+import { Op } from 'sequelize';
+
 import path from 'path';
-import db from '../config/db.config';
+import sequelize from '../config/sequelize.config';
+
+import Food from '../Models/Food';
+import Shop from '../Models/Shop';
+import Category from '../Models/Category';
+import Order from '../Models/Order';
+import FoodLike from '../Models/FoodLike';
 
 class FoodController {
-    //[GET] baseURL/food/info
-    async getFood(req: any, res: any) {
+
+    //[GET] baseURL/food
+    async getListFood (req: any, res: any) {
         try {
-            const foodName: string = req.query.foodName.toLowerCase().trim();
-            const shopName: string = req.query.shopName.toLowerCase().trim();
+            let userId: number = req.user.id;
+            let foodType: string = req.query.foodType.toLowerCase().trim();
 
-            const numOfFood: any = await db.promise().query('SELECT COUNT(food_item.id) AS num FROM food_item JOIN shop ON shop.id = food_item.shopId WHERE shop.name = ?', [shopName]);
+            let foods: any = await Food.findAll({
+                attributes: [
+                    "id",
+                    "name",
+                    "image",
+                    "description",
+                    "price",
+                    [sequelize.col("Shop.place"), "place"],
+                    [sequelize.literal("(SELECT IF(orders.id IS NULL, 0, COUNT(orders.id)) FROM foods LEFT JOIN orders ON orders.foodId = foods.id WHERE Food.id = foods.id)"), "numOrders"],
+                    [sequelize.literal(`(SELECT IF(food_likes.id IS NULL, 0, 1) FROM foods LEFT JOIN food_likes ON food_likes.foodId = foods.id AND food_likes.userId = ${userId} WHERE Food.id = foods.id)`), "liked"]
+                ],
+                where: {
+                    "$Category.name$": foodType
+                },
+                include: [
+                    {
+                        model: Category,
+                        attributes: [],
+                        required: true
+                    },
+                    {
+                        model: Shop,
+                        attributes: [],
+                        required: true
+                    },
+                    {
+                        model: Order,
+                        attributes: [],
+                        required: false
+                    }
+                ],
+                group: [
+                    "id"
+                ],
+                order: [
+                    [sequelize.col("numOrders"), "DESC"]
+                ]
+            });
 
-            db.query('SELECT shop.name AS shopName, shop.image AS shopImage, shop.place, shop.isTick, food_item.id, food_item.name, food_item.image, food_item.description,food_item.price FROM food_item JOIN shop ON shop.id = food_item.shopId WHERE food_item.name = ? AND shop.name = ?', ([foodName, shopName]), (err: any, result: any) => {
-                if (err) throw err;
-                if (result.length) {
-                    res.status(200).json({
-                        code: 'food/getFood.success',
-                        message: 'success',
-                        data: {
-                            ...result[0],
-                            num: numOfFood[0][0].num
-                        }
-                    });
-                } else {
-                    res.status(404).json({
-                        code: 'food/getFood.notFound',
-                        message: 'dont found food',
-                    });
-                }
+            if (foods.length) {
+                res.status(200).json({
+                    code: "home/getFood.success",
+                    data: foods
+                });
+            } else {
+                res.status(404).json({
+                    code: "home/getFood.notFound",
+                    message: "No food found"
+                });
+            }
+        } catch (error: any) {
+            res.status(500).json({
+                code: 'home/getUser.error',
+
+                error: error.message
             })
+        }
+    }
+
+    //[GET] baseURL/food/:foodId
+    async getFoodInfo (req: any, res: any) {
+        try {
+            let foodId: number = req.params.foodId;
+
+            let food: any = await Food.findOne({
+                where: {
+                    id: foodId
+                },
+                attributes: [
+                    "id",
+                    "name",
+                    "image",
+                    "description",
+                    "price",
+                    [sequelize.col("Shop.name"), "shopName"],
+                    [sequelize.col("Shop.image"), "shopImage"],
+                    [sequelize.col("Shop.place"), "place"],
+                    [sequelize.col("Shop.isTick"), "isTick"],
+                ],
+                include: [{
+                    model: Shop,
+                    attributes: [],
+                    required: true
+                }]
+            });
+
+            if (food) {
+                res.status(200).json({
+                    code: 'food/getFood.success',
+                    data: food
+                });
+
+            } else {
+                res.status(404).json({
+                    code: 'food/getFood.notFound',
+                    message: 'dont found food',
+                });
+            }
         } catch (error: any) {
             res.status(500).json([{
                 code: 'food/getFood.error',
-
                 error: error.message
             }])
         }
     }
 
     //[PATCH] baseUrl/food/like/:foodId
-    changeLike(req: any, res: any) {
+    async changeLike(req: any, res: any) {
         try {
-            const userId: number = req.user.id;
-            const foodId: string = req.params.foodId;
-            const status: boolean = req.body.statusLike;
+            let userId: number = req.user.id;
+            let foodId: string = req.params.foodId;
+            let status: boolean = req.body.statusLike;
 
             if (status === true) {
-                db.query('DELETE FROM food_like WHERE foodId = ? AND userId = ?', ([foodId, userId]), (err: any, result: any) => {
-                    if (err) throw err;
-                    if (result) {
-                        res.status(200).json({
-                            code: 'food/changeLike.success',
-                            message: 'success',
-                        });
-                    } else {
-                        res.status(404).json({
-                            code: 'food/changeLike.notFound',
-                            message: 'dont find food or user'
-                        });
+                await FoodLike.destroy({
+                    where: {
+                        [Op.and]: [{foodId}, {userId}]
                     }
-                })
+                });
             } else if (status === false) {
-                db.query('INSERT INTO food_like (userId, foodId) VALUES (?, ?)', ([userId, foodId]), (err: any, result: any) => {
-                    if (err) throw err;
-                    if (result) {
-                        res.status(200).json({
-                            code: 'food/changeLike.success',
-                            message: 'success',
-                        });
-                    } else {
-                        res.status(404).json({
-                            code: 'food/changeLike.notFound',
-                            message: 'dont find food or user'
-                        });
-                    }
+                await FoodLike.create({
+                   foodId,
+                   userId 
                 })
             }
+
+            res.status(200).json({
+                code: 'food/changeLike.success',
+                message: 'success',
+            });
         } catch (error: any) {
             res.status(500).json({
                 code: 'food/changeLike.error',
-
                 error: error.message
             });
         }
     }
 
-    //[POST] baseUrl/food/food
-    async newFood(req: any, res: any) {
+    //[POST] baseUrl/food
+    async createNewFood (req: any, res: any) {
         try {
-            const userId: number = req.user.id;
-            const name: string = req.body.name.toLowerCase().trim();
-            const categoryId: number = req.body.categoryId;
-            const description: string = req.body.description.toLowerCase().trim();
-            const price: number = req.body.price.trim();
-            const storage = getStorage();
-            const storageRef = ref(storage, `food_image/${userId}-${name}${path.extname(req.file.originalname)}`);
+            let userId: number = req.user.id;
+            let name: string = req.body.name.toLowerCase().trim();
+            let categoryId: number = req.body.categoryId;
+            let description: string = req.body.description.toLowerCase().trim();
+            let price: number = req.body.price;
+
+            let storage = getStorage();
+            let storageRef = ref(storage, `food_image/${userId}-${name}${path.extname(req.file.originalname)}`);
 
             //get shop id
-            const shopId: any = await db.promise().query('SELECT shop.id FROM shop JOIN user ON user.id = shop.userId WHERE user.id = ?', [userId])
-
-            // //upload
-            const snapshot = await uploadBytesResumable(storageRef, req.file.buffer);
-            const url = await getDownloadURL(snapshot.ref);
-
-            db.query('INSERT INTO food_item(foodCategoryId, shopId, name, image, description, price) VALUES (?, ?, ?, ?, ?, ?)', ([categoryId, shopId[0][0].id, name, url, description, price]), (err: any, result: any) => {
-                if (err) throw err;
-                if (result) {
-                    res.status(200).json({
-                        code: 'food/newFood.success',
-                        message: 'add food successfully'
-                    });
-                } else {
-                    res.status(404).json({
-                        code: 'food/newFood.notFound',
-                        message: 'add food not found'
-                    });
+            let shop: any = await Shop.findOne({
+                attributes: ["id"],
+                where: {
+                    userId
                 }
-            })
+            });
+
+            if (shop) {
+                //upload
+                let snapshot = await uploadBytesResumable(storageRef, req.file.buffer);
+                let url = await getDownloadURL(snapshot.ref);
+
+                await Food.create({
+                    foodCategoryId: categoryId,
+                    shopId : shop.id,
+                    name,
+                    image: url,
+                    description,
+                    price
+                });
+
+                res.status(200).json({
+                    code: 'food/createNewFood.success',
+                    message: 'add food successfully'
+                });
+            } else {
+                res.status(404).json({
+                    code: 'food/newFood.notFound',
+                    message: 'User does not have shop'
+                });
+            }
         } catch (error: any) {
             res.status(500).json({
                 code: 'food/newFood.error',
-
                 error: error.message
             })
         }
     }
 
     //[GET] baseURL/food/favorite
-    getFavoriteFood(req: any, res: any) {
+    async getLikedFoods (req: any, res: any) {
         try {
-            const userId: number = req.user.id;
+            let userId: number = req.user.id;
 
-            db.query('SELECT food_item.id, shop.name AS shopName, food_item.name, food_item.image, food_item.description, food_item.price FROM food_item JOIN food_like ON food_like.foodId = food_item.id JOIN user ON user.id = food_like.userId JOIN shop ON food_item.shopId = shop.id WHERE user.id = ?', ([userId]), (err: any, result: any) => {
-                if (err) throw err;
-                if (result.length) {
-                    res.status(200).json({
-                        code: 'favorite/getFoodFavorite.success',
-                        message: 'Success',
-                        data: {
-                            foodList: result
-                        }
-                    })
-                } else {
-                    res.status(404).json({
-                        code: 'favorite/getFoodFavorite.notFound',
-                        message: 'Not Found any food'
-                    })
-                }
-            })
+            let foods = await Food.findAll({
+                where: {
+                    "$FoodLikes.userId$": userId
+                },
+                attributes: [
+                    "id",
+                    "name",
+                    "image",
+                    "description",
+                    "price",
+                    [sequelize.col("Shop.name"), "shopName"],
+
+                ],
+                include: [
+                    {
+                    model: Shop,
+                    attributes: [],
+                    required: true
+                    },
+                    {
+                        model: FoodLike,
+                        attributes: [],
+                        required: true
+                    }
+            ]
+            });
+
+            if (foods.length) {
+                res.status(200).json({
+                    code: 'favorite/getFoodFavorite.success',
+                    message: 'Success',
+                    data: foods
+                })
+            } else {
+                res.status(404).json({
+                    code: 'favorite/getFoodFavorite.notFound',
+                    message: 'User does not like any foods'
+                })
+            }
         } catch (error: any) {
             res.status(500).json({
                 code: 'favorite/getFoodFavorite.error',
-
                 error: error.message
             })
         }

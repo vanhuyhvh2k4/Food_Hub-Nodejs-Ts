@@ -11,6 +11,4 @@ router.get('/user', verifyToken.verifyTokenJWT, homeController.getUser);
 
 router.get('/shop', verifyToken.verifyTokenJWT, homeController.getShop);
 
-router.get('/food', verifyToken.verifyTokenJWT, homeController.getFood);
-
 export default router;

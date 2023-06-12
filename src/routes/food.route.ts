@@ -17,13 +17,19 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 const upload = multer({storage: multer.memoryStorage(), fileFilter});
 
-router.get('/info', FoodController.getFood);
+//PUBLIC ROUTES
+
+//PRIVATE ROUTES
+
+router.get("/", verifyToken.verifyTokenJWT, FoodController.getListFood);
+
+router.get('/like', verifyToken.verifyTokenJWT, FoodController.getLikedFoods);
+
+router.get("/:foodId", FoodController.getFoodInfo);
 
 router.patch('/like/:foodId', verifyToken.verifyTokenJWT, FoodController.changeLike);
 
-router.post('/food', verifyToken.verifyTokenJWT, upload.single('image'), multerErrorMiddleware, FoodController.newFood);
-
-router.get('/favorite', verifyToken.verifyTokenJWT, FoodController.getFavoriteFood);
+router.post('/', verifyToken.verifyTokenJWT, upload.single('image'), multerErrorMiddleware, FoodController.createNewFood);
 
 export default router;
 
