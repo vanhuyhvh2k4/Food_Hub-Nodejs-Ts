@@ -15,10 +15,9 @@ const fileFilter = (req: any, file: any, cb: any) => {
         cb(error)
     }
 }
-
 const upload = multer({storage: multer.memoryStorage(), fileFilter})
 
-router.post('/', verifyToken.verifyTokenJWT, authController.verifyToken);
+// PUBLIC ROUTES//
 
 router.post('/register', emailMiddleWare.checkEmail, authController.register);
 
@@ -26,13 +25,17 @@ router.post('/login', authController.login);
 
 router.post('/social', emailMiddleWare.checkEmail, authController.socialSignIn);
 
+router.post('/password', emailMiddleWare.checkEmail, authController.sendMail);
+
+//PRIVATE ROUTES //
+
+router.post('/', verifyToken.verifyTokenJWT, authController.verifyToken);
+
 router.post('/token', authController.refreshToken);
 
 router.patch('/profile/:userId', verifyToken.verifyTokenJWT, upload.single('avatar'), multerErrorMiddleware, authController.changeAvatar);
 
 router.put('/profile/:userId', verifyToken.verifyTokenJWT, authController.changeProfile);
-
-router.post('/password', emailMiddleWare.checkEmail, authController.sendMail);
 
 router.patch('/password/:email', verifyToken.verifyTokenMail, authController.reset);
 

@@ -1,11 +1,9 @@
-import db from "../config/db.config";
 import User from "../Models/User";
 import Shop from "../Models/Shop";
 import Food from "../Models/Food";
 import Order from "../Models/Order";
 import Category from "../Models/Category";
 import Review from "../Models/Review";
-import ShopLike from "../Models/ShopLike";
 import sequelize from "../config/sequelize.config";
 
 class homeController {
@@ -91,7 +89,7 @@ class homeController {
                     "place",
                     "isTick",
                     "shipFee",
-                    [sequelize.literal(`(SELECT IF(shop_likes.id IS NULL, 0, 1) FROM users JOIN shops ON shops.userId = users.id LEFT JOIN shop_likes ON shop_likes.shopId = shops.id AND shop_likes.userId = ${userId} WHERE shops.id = Shop.id GROUP BY shops.id)`), 'liked'],
+                    [sequelize.literal(`(SELECT IF(shop_likes.id IS NULL, 0, 1) FROM shops LEFT JOIN shop_likes ON shop_likes.shopId = shops.id AND shop_likes.userId = ${userId} WHERE shops.id = Shop.id GROUP BY shops.id)`), 'liked'],
                     [sequelize.fn("COUNT", sequelize.col("Food.Orders.Review.id")), "num_reviews"],
                     [sequelize.literal('(SELECT IF(reviews.id IS NULL, 0, ROUND(AVG(reviews.rating), 0)) FROM shops JOIN foods ON foods.shopId = shops.id LEFT JOIN orders ON orders.foodId = foods.id LEFT JOIN reviews ON reviews.orderId = orders.id WHERE shops.id = Shop.id GROUP BY shops.id)'), 'avgRating']
                 ],
@@ -104,13 +102,16 @@ class homeController {
                             {
                                 model: Category,
                                 attributes: [],
+                                required: true
                             },
                             {
                                 model: Order,
                                 attributes: [],
+                                required: false,
                                 include: [{
                                     model: Review,
-                                    attributes: []
+                                    attributes: [],
+                                    required: false
                                 }]
                             }
                         ]
@@ -125,17 +126,24 @@ class homeController {
                 ],
             });
 
-            if (type === "all" && pageIndex > 0) {
-                responseData = shops.slice(start, end);
+            if (shops.length) {
+                if (type === "all" && pageIndex > 0) {
+                    responseData = shops.slice(start, end);
+                } else {
+                    responseData = shops.slice(0, 4);
+                }
+                res.status(200).json({
+                    code: "home/getShop.success",
+                    data: responseData,
+                    ...(type === "all" && {page: pageIndex})
+                });
             } else {
-                responseData = shops.slice(0, 4);
+                res.status(404).json({
+                    code: "home/getShop.notFound",
+                    message: "No shop found"
+                });
             }
 
-            res.status(200).json({
-                code: "home/getShop.success",
-                data: responseData,
-                ...(type === "all" && {page: pageIndex})
-            });
             
         } catch (error: any) {
             res.status(500).json({
@@ -147,28 +155,61 @@ class homeController {
     }
 
     //[GET] baseURL/home/food
-    getFood(req: any, res: any) {
+    async getFood(req: any, res: any) {
         try {
-            const userId: number = req.user.id;
-            const foodType: string = req.query.foodType.toLowerCase().trim();
+            let userId: number = req.user.id;
+            let foodType: string = req.query.foodType.toLowerCase().trim();
 
-            db.query('SELECT shop.name AS shopName, food_item.id, food_item.name, food_item.image, food_item.description, food_item.price, shop.place, IF (food_like.id IS null, 0, 1) as liked, COUNT(food_order.id) AS numOrders FROM food_item JOIN food_category ON food_item.foodCategoryId = food_category.id JOIN shop ON food_item.shopId = shop.id LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? LEFT JOIN food_order ON food_order.foodId = food_item.id AND food_order.status = "finished" WHERE food_category.name = ? GROUP BY food_item.id ORDER BY numOrders DESC', ([userId, foodType]), (err: any, result: any) => {
-                if (err) throw err;
-                if (result.length) {
-                    res.status(200).json({
-                        code: 'home/getFood.success',
-                        message: 'Success',
-                        data: {
-                            foodList: result
-                        }
-                    });
-                } else {
-                    res.status(404).json({
-                        code: 'home/getFood.notFound',
-                        message: 'Dont found the food',
-                    });
-                }
-            })
+            let foods: any = await Food.findAll({
+                attributes: [
+                    "id",
+                    "name",
+                    "image",
+                    "description",
+                    "price",
+                    [sequelize.col("Shop.place"), "place"],
+                    [sequelize.literal("(SELECT IF(orders.id IS NULL, 0, COUNT(orders.id)) FROM foods LEFT JOIN orders ON orders.foodId = foods.id WHERE Food.id = foods.id)"), "numOrders"],
+                    [sequelize.literal(`(SELECT IF(food_likes.id IS NULL, 0, 1) FROM foods LEFT JOIN food_likes ON food_likes.foodId = foods.id AND food_likes.userId = ${userId} WHERE Food.id = foods.id)`), "liked"]
+                ],
+                where: {
+                    "$Category.name$": foodType
+                },
+                include: [
+                    {
+                        model: Category,
+                        attributes: [],
+                        required: true
+                    },
+                    {
+                        model: Shop,
+                        attributes: [],
+                        required: true
+                    },
+                    {
+                        model: Order,
+                        attributes: [],
+                        required: false
+                    }
+                ],
+                group: [
+                    "id"
+                ],
+                order: [
+                    [sequelize.col("numOrders"), "DESC"]
+                ]
+            });
+
+            if (foods.length) {
+                res.status(200).json({
+                    code: "home/getFood.success",
+                    data: foods
+                });
+            } else {
+                res.status(404).json({
+                    code: "home/getFood.notFound",
+                    message: "No food found"
+                });
+            }
         } catch (error: any) {
             res.status(500).json({
                 code: 'home/getUser.error',

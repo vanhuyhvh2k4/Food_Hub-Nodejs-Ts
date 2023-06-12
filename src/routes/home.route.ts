@@ -5,6 +5,8 @@ import verifyToken from '../middleware/verifyToken.middleware';
 
 const router = express.Router();
 
+//PRIVATE ROUTES
+
 router.get('/user', verifyToken.verifyTokenJWT, homeController.getUser);
 
 router.get('/shop', verifyToken.verifyTokenJWT, homeController.getShop);
