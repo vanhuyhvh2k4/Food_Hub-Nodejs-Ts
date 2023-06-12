@@ -1,9 +1,27 @@
 import sequelize from "../config/sequelize.config";
-import { DataTypes } from 'sequelize';
+import {
+    Model,
+    DataTypes
+} from 'sequelize';
 import User from "./User";
 import Food from "./Food";
 
-const FoodLike = sequelize.define("FoodLike", {
+interface FoodLikeAttributes {
+    id?: number;
+    userId: number;
+    foodId: number;
+}
+
+class FoodLike extends Model < FoodLikeAttributes > implements FoodLikeAttributes {
+    public id!: number;
+    public userId!: number;
+    public foodId!: number;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+FoodLike.init({
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -17,18 +35,28 @@ const FoodLike = sequelize.define("FoodLike", {
         type: DataTypes.INTEGER,
         allowNull: false
     }
-},
-{ 
-    modelName: 'FoodLike', 
+}, {
+    sequelize,
+    modelName: 'FoodLike',
     tableName: "food_likes"
 });
 
-User.hasMany(FoodLike, {foreignKey: "userId"});
+User.hasMany(FoodLike, {
+    foreignKey: "userId"
+});
 
-FoodLike.belongsTo(User, {foreignKey: "userId", targetKey: "id"});
+FoodLike.belongsTo(User, {
+    foreignKey: "userId",
+    targetKey: "id"
+});
 
-Food.hasMany(FoodLike, {foreignKey: "foodId"});
+Food.hasMany(FoodLike, {
+    foreignKey: "foodId"
+});
 
-FoodLike.belongsTo(Food, {foreignKey: "foodId", targetKey: "id"});
+FoodLike.belongsTo(Food, {
+    foreignKey: "foodId",
+    targetKey: "id"
+});
 
 export default FoodLike;

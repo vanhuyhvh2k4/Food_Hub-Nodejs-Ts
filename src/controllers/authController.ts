@@ -296,44 +296,36 @@ class AuthControlller {
             let fullName: string = req.body.fullName.toLowerCase().trim();
             let email: string = req.body.email.toLowerCase().trim();
             let avatar: string = req.body.avatar.trim();
-            let user = req.user;
+            // let user = req.user;
             // check if has already signed in return token else create a new account and return token
-            if (isExist) {
-                res.status(200).json({
-                    data: {
-                        accessToken: JWTUntils.generateAccessToken(user),
-                        refreshToken: JWTUntils.generateRefreshToken(user)
-                    }
-                });
-            } else {
-                await User.create({
-                    fullName,
+
+            let [user ,created] = await User.findOrCreate({
+                where: {
+                    email
+                },
+                defaults: {
                     email,
+                    fullName,
                     avatar,
-                    type: true
-                });
-
-                let user: any = await User.findOne({
-                    where: {
-                        email,
-                        type: 1
-                    }
-                });
-
-                if (user) {
-                    res.status(200).json({
-                        data: {
-                            accessToken: JWTUntils.generateAccessToken(user),
-                            refreshToken: JWTUntils.generateRefreshToken(user)
-                        }
-                    });
-                } else {
-                    res.status(404).json({
-                        code: 'auth/social.notFound',
-                        message: 'User not found'
-                    });
+                    type: true,
                 }
+            });
+
+            let payload: {
+                id: number,
+                email: string
+            } = {
+                id: user.id,
+                email: user.email
             }
+
+            res.status(200).json({
+                code: "auth/social.success",
+                data: {
+                    accessToken: JWTUntils.generateAccessToken(payload),
+                    refreshToken: JWTUntils.generateRefreshToken(payload),
+                }
+            });
         } catch (error: any) {
             res.status(500).json({
                 code: 'auth/login.error',

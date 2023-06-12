@@ -133,7 +133,7 @@ class FoodController {
     async changeLike(req: any, res: any) {
         try {
             let userId: number = req.user.id;
-            let foodId: string = req.params.foodId;
+            let foodId: number = req.params.foodId;
             let status: boolean = req.body.statusLike;
 
             if (status === true) {
@@ -187,7 +187,7 @@ class FoodController {
                 let url = await getDownloadURL(snapshot.ref);
 
                 await Food.create({
-                    foodCategoryId: categoryId,
+                    categoryId,
                     shopId : shop.id,
                     name,
                     image: url,
@@ -213,7 +213,7 @@ class FoodController {
         }
     }
 
-    //[GET] baseURL/food/favorite
+    //[GET] baseURL/food/like
     async getLikedFoods (req: any, res: any) {
         try {
             let userId: number = req.user.id;
@@ -262,6 +262,50 @@ class FoodController {
                 code: 'favorite/getFoodFavorite.error',
                 error: error.message
             })
+        }
+    }
+
+    //[GET] baseUrl/food/shop/:shopId
+    async getAllFoodOfShop (req: any, res: any) {
+        try {
+            let userId: number = req.user.id;
+            let shopId: number = req.params.shopId;
+
+            let foods = await Food.findAll({
+                where: {
+                    "$Shop.id$": shopId
+                },
+                attributes: [
+                    "id",
+                    "name",
+                    "image",
+                    "description",
+                    "price",
+                    [sequelize.literal(`(SELECT IF(food_likes.id IS NULL, 0, 1) FROM foods LEFT JOIN food_likes ON food_likes.foodId = foods.id AND food_likes.userId = ${userId} WHERE Food.id = foods.id)`), "liked"]
+                ],
+                include: [{
+                    model: Shop,
+                    attributes: [],
+                    required: true
+                }]
+            });
+
+            if (foods.length) {
+                res.status(200).json({
+                    code: "food/getAllFoodOfShop.success",
+                    data: foods
+                });
+            } else {
+                res.status(404).json({
+                    code: "food/getAllFoodOfShop.notFound",
+                    message: "No food found"
+                });
+            }
+        } catch (error: any) {
+            res.status(500).json({
+                code: "food/getAllFoodOfShop.error",
+                error: error.message
+            });
         }
     }
 }

@@ -1,10 +1,31 @@
 import sequelize from "../config/sequelize.config";
-import { DataTypes } from 'sequelize';
+import {
+    Model,
+    DataTypes
+} from 'sequelize';
 import User from "./User";
 import Food from "./Food";
-import Review from "./Review";
 
-const Order = sequelize.define("Order", {
+interface OrderAttributes {
+    id?: number;
+    userId: number;
+    foodId: number;
+    quantity: number;
+    status: string;
+}
+
+class Order extends Model < OrderAttributes > implements OrderAttributes {
+    public id!: number;
+    public userId!: number;
+    public foodId!: number;
+    public quantity!: number;
+    public status!: string;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+Order.init({
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -27,14 +48,28 @@ const Order = sequelize.define("Order", {
         allowNull: false,
         defaultValue: 'waiting confirm'
     }
-}, { modelName: 'Order', tableName: "orders" });
+}, {
+    sequelize,
+    modelName: 'Order',
+    tableName: "orders"
+});
 
-Food.hasMany(Order, {foreignKey: "foodId"});
+Food.hasMany(Order, {
+    foreignKey: "foodId"
+});
 
-Order.belongsTo(Food, {foreignKey: "foodId", targetKey: "id"});
+Order.belongsTo(Food, {
+    foreignKey: "foodId",
+    targetKey: "id"
+});
 
-User.hasMany(Order, {foreignKey: "userId"});
+User.hasMany(Order, {
+    foreignKey: "userId"
+});
 
-Order.belongsTo(User, {foreignKey: "userId", targetKey: "id"});
+Order.belongsTo(User, {
+    foreignKey: "userId",
+    targetKey: "id"
+});
 
 export default Order;

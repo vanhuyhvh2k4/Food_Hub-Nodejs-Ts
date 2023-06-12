@@ -6,29 +6,51 @@ import {
 } from 'firebase/storage';
 import path from 'path';
 import db from '../config/db.config';
+import Shop from '../Models/Shop';
+import Food from '../Models/Food';
+import sequelize from '../config/sequelize.config';
 
 class ShopController {
 
-    //[GET] baseURL/shop/info
-    getInfo(req: any, res: any) {
+    //[GET] baseURL/shop/:shopId
+    async getShopInfo(req: any, res: any) {
         try {
-            const shopName: string = req.query.shopName.toLowerCase().trim();
+            let shopId: number = req.params.shopId;
 
-            db.query('SELECT shop.id, shop.name, shop.image, shop.background, shop.place, shop.isTick, COUNT(food_item.id) as quantity FROM food_item JOIN shop ON shop.id = food_item.shopId WHERE shop.name = ?', ([shopName]), (err: any, result: any) => {
-                if (err) throw err;
-                if (result.length) {
-                    res.status(200).json({
-                        code: 'shop/getInfo.success',
-                        message: 'Success',
-                        data: result[0]
-                    })
-                } else {
-                    res.status(404).json({
-                        code: 'shop/getInfo.dontFound',
-                        message: 'No shop found',
-                    });
-                }
-            })
+            let shop = await Shop.findOne({
+                where: {
+                    id: shopId
+                },
+                attributes: [
+                    "id",
+                    "name",
+                    "image",
+                    "background",
+                    "place",
+                    "isTick",
+                    [sequelize.fn("COUNT", sequelize.col("Food.id")), "quantity"]
+                ],
+                include: [{
+                    model: Food,
+                    attributes: [],
+                    required: true
+                }],
+                group: [
+                    "id"
+                ]
+            });
+
+            if (shop) {
+                res.status(200).json({
+                    code: 'shop/getInfo.success',
+                    data: shop
+                })
+            } else {
+                res.status(404).json({
+                    code: 'shop/getInfo.dontFound',
+                    message: 'No shop found',
+                });
+            }
         } catch (error: any) {
             res.status(500).json({
                 code: 'shop/getInfo.error',
@@ -38,41 +60,11 @@ class ShopController {
         }
     }
 
-    //[GET] baseURL/shop/food
-    getFood(req: any, res: any) {
-        try {
-            const userId: number = req.user.id;
-            const shopName: string = req.query.shopName.toLowerCase().trim();
-            db.query('SELECT food_item.id, food_item.name, food_item.image, food_item.description, food_item.price, IF (food_like.id IS null, 0, 1) AS liked FROM food_item JOIN shop ON shop.id = food_item.shopId LEFT JOIN food_like ON food_like.foodId = food_item.id AND food_like.userId = ? WHERE shop.name = ?', ([userId, shopName]), (err: any, result: any) => {
-                if (err) throw err;
-                if (result.length) {
-                    res.status(200).json({
-                        code: 'shop/getFood.success',
-                        message: 'Success',
-                        data: {
-                            foodList: result
-                        }
-                    });
-                } else {
-                    res.status(404).json({
-                        code: 'shop/getFood.notFound',
-                        message: 'Not found the food',
-                    });
-                }
-            });
-        } catch (error: any) {
-            res.status(500).json({
-                code: 'shop/getFood.error',
-
-                error: error.message
-            });
-        }
-    }
-
     //[POST] baseUrl/shop/checkShopName
     checkShopName(req: any, res: any) {
         try {
-            const shopName: string = req.body.shopName.toLowerCase().trim();
+            let shopName: string = req.body.shopName.toLowerCase().trim();
+
             db.query('SELECT * FROM shop WHERE shop.name = ?', ([shopName]), (err: any, result: any) => {
                 if (err) throw err;
                 if (result.length) {

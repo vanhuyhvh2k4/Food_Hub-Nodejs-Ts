@@ -17,9 +17,7 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 const upload = multer({storage: multer.memoryStorage(), fileFilter})
 
-router.get('/info', ShopController.getInfo);
-
-router.get('/food', verifyToken.verifyTokenJWT, ShopController.getFood);
+router.get('/:shopId', ShopController.getShopInfo);
 
 router.post('/checkShopName', verifyToken.verifyTokenJWT, ShopController.checkShopName);
 

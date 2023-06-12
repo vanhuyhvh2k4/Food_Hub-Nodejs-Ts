@@ -29,6 +29,8 @@ router.get("/:foodId", FoodController.getFoodInfo);
 
 router.patch('/like/:foodId', verifyToken.verifyTokenJWT, FoodController.changeLike);
 
+router.get("/shop/:shopId", verifyToken.verifyTokenJWT, FoodController.getAllFoodOfShop)
+
 router.post('/', verifyToken.verifyTokenJWT, upload.single('image'), multerErrorMiddleware, FoodController.createNewFood);
 
 export default router;

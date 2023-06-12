@@ -1,10 +1,35 @@
 import sequelize from "../config/sequelize.config";
-import { DataTypes } from 'sequelize';
+import {
+  Model,
+  DataTypes
+} from 'sequelize';
 import Shop from "./Shop";
 import Category from "./Category";
-import Order from "./Order";
 
-const Food = sequelize.define("Food", {
+interface FoodAttributes {
+  id?: number;
+  categoryId: number;
+  shopId: number;
+  name: string;
+  image: string;
+  description: string;
+  price: number;
+}
+
+class Food extends Model < FoodAttributes > implements FoodAttributes {
+  public id!: number;
+  public categoryId!: number;
+  public shopId!: number;
+  public name!: string;
+  public image!: string;
+  public description!: string;
+  public price!: number;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+Food.init({
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -16,39 +41,49 @@ const Food = sequelize.define("Food", {
   },
   shopId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: false
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: false
   },
   image: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: false
   },
   description: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: false
   },
   price: {
     type: DataTypes.FLOAT,
-    allowNull: false,
+    allowNull: false
   }
-},
-{
-    modelName: 'Food',
-    tableName: "foods",
-    indexes: [{
-        fields: ['name', 'price']
-    }] 
+}, {
+  sequelize,
+  modelName: 'Food',
+  tableName: "foods",
+  indexes: [{
+    fields: ['name', 'price']
+  }]
 });
 
-Shop.hasMany(Food, {foreignKey: "shopId"});
+Shop.hasMany(Food, {
+  foreignKey: "shopId"
+});
 
-Food.belongsTo(Shop, {foreignKey: "shopId", targetKey: "id"});
+Food.belongsTo(Shop, {
+  foreignKey: "shopId",
+  targetKey: "id"
+});
 
-Category.hasMany(Food, {foreignKey: "categoryId"});
+Category.hasMany(Food, {
+  foreignKey: "categoryId"
+});
 
-Food.belongsTo(Category, {foreignKey: "categoryId", targetKey: "id"});
+Food.belongsTo(Category, {
+  foreignKey: "categoryId",
+  targetKey: "id"
+});
 
 export default Food;

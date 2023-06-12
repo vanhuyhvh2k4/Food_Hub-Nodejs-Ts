@@ -1,8 +1,23 @@
 import sequelize from "../config/sequelize.config";
-import { DataTypes } from 'sequelize';
-import Food from "./Food";
+import {
+  Model,
+  DataTypes
+} from 'sequelize';
 
-const Category = sequelize.define("Category", {
+interface CategoryAttributes {
+  id?: number;
+  name: string;
+}
+
+class Category extends Model < CategoryAttributes > implements CategoryAttributes {
+  public id!: number;
+  public name!: string;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+Category.init({
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -12,16 +27,14 @@ const Category = sequelize.define("Category", {
     type: DataTypes.STRING,
     allowNull: false
   }
-}, 
-{
-    modelName: 'Category',
-    tableName: "categories",
-    indexes: [
-        {
-            unique: true,
-            fields: ['name']
-        }
-    ] 
+}, {
+  sequelize,
+  modelName: 'Category',
+  tableName: "categories",
+  indexes: [{
+    unique: true,
+    fields: ['name']
+  }]
 });
 
 export default Category;
