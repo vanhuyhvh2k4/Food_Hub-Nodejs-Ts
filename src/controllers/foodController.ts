@@ -15,7 +15,7 @@ import Category from '../Models/Category';
 import Order from '../Models/Order';
 import FoodLike from '../Models/FoodLike';
 
-class FoodController {
+class foodController {
 
     //[GET] baseURL/food
     async getListFood (req: any, res: any) {
@@ -310,4 +310,4 @@ class FoodController {
     }
 }
 
-export default new FoodController;
+export default new foodController;

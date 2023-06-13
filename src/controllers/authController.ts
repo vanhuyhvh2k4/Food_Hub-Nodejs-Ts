@@ -17,7 +17,7 @@ import {
 } from '../utils/bcrypt';
 import User from '../Models/User';
 
-class AuthControlller {
+class authControlller {
     //[GET] baseUrl/auth
     async getCurrentUser(req: any, res: any) {
         try {
@@ -337,12 +337,9 @@ class AuthControlller {
     //[POST] baseUrl/auth/social
     async socialSignIn(req: any, res: any) {
         try {
-            let isExist: boolean = req.isExist;
             let fullName: string = req.body.fullName.toLowerCase().trim();
             let email: string = req.body.email.toLowerCase().trim();
             let avatar: string = req.body.avatar.trim();
-            // let user = req.user;
-            // check if has already signed in return token else create a new account and return token
 
             let [user ,created] = await User.findOrCreate({
                 where: {
@@ -380,4 +377,4 @@ class AuthControlller {
     }
 }
 
-export default new AuthControlller;
+export default new authControlller;

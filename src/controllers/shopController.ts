@@ -14,7 +14,7 @@ import Order from '../Models/Order';
 import Review from '../Models/Review';
 import ShopLike from '../Models/ShopLike';
 
-class ShopController {
+class shopController {
 
     //[GET] baseURL/shop
     async getListShop (req: any, res: any) {
@@ -365,4 +365,4 @@ class ShopController {
     }
 }
 
-export default new ShopController;
+export default new shopController;
