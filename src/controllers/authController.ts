@@ -18,6 +18,46 @@ import {
 import User from '../Models/User';
 
 class AuthControlller {
+    //[GET] baseUrl/auth
+    async getCurrentUser(req: any, res: any) {
+        try {
+            let userId: number = req.user.id;
+            let user: any = await User.findOne({
+                attributes: [
+                    'id',
+                    'avatar',
+                    'fullName',
+                    'email',
+                    'phone',
+                    'address',
+                ],
+                where: {
+                    id: userId
+                }
+            });
+
+            if (user) {
+                res.status(200).json({
+                    code: 'home/getUser.success',
+                    data: {
+                        currentUser: user
+                    }
+                })
+            } else {
+                res.status(404).json({
+                    code: 'home/getUser.notFound',
+                    message: 'User is not exists'
+                });
+            }
+        } catch (error: any) {
+            res.status(500).json({
+                code: 'home/getUser.error',
+
+                error: error.message
+            })
+        }
+    }
+
     //[POST] baseUrl/auth
     verifyToken(req: any, res: any) {
         res.status(200).json({
@@ -100,8 +140,13 @@ class AuthControlller {
                     res.status(401).json({
                         code: 'auth/login.unauthorized',
                         message: 'Email or password is incorrect'
-                    })
+                    });
                 }
+            } else {
+                res.status(404).json({
+                    code: 'auth/login.notFound',
+                    message: 'Email does not registered yet'
+                });
             }
         } catch (error: any) {
             res.status(500).json({

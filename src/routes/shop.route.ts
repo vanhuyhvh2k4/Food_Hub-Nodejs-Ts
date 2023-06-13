@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import multer from 'multer';
 import multerErrorMiddleware from '../middleware/multerError.middleware';
-import ShopController from '../controllers/shopController';
+import shopController from '../controllers/shopController';
 import verifyToken from '../middleware/verifyToken.middleware'
 
 const fileFilter = (req: any, file: any, cb: any) => {
@@ -17,16 +17,18 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 const upload = multer({storage: multer.memoryStorage(), fileFilter})
 
-router.get('/:shopId', ShopController.getShopInfo);
+router.patch('/like/:shopId', verifyToken.verifyTokenJWT, shopController.changeLike);
 
-router.post('/checkShopName', verifyToken.verifyTokenJWT, ShopController.checkShopName);
+router.post('/checkShopName', verifyToken.verifyTokenJWT, shopController.checkShopName);
 
-router.post('/shop', verifyToken.verifyTokenJWT, upload.fields([{ name: 'avatar', maxCount: 1}, { name: 'background', maxCount: 1}]), multerErrorMiddleware, ShopController.create);
+router.get('/checkHasShop', verifyToken.verifyTokenJWT, shopController.checkHasShop);
 
-router.patch('/like/:shopId', verifyToken.verifyTokenJWT, ShopController.changeLike);
+router.get('/like', verifyToken.verifyTokenJWT, shopController.getFavoriteShop);
 
-router.get('/checkHasShop', verifyToken.verifyTokenJWT, ShopController.checkHasShop);
+router.get('/:shopId', shopController.getShopInfo);
 
-router.get('/favorite', verifyToken.verifyTokenJWT, ShopController.getFavoriteShop);
+router.get("/", verifyToken.verifyTokenJWT, shopController.getListShop);
+
+router.post('/', verifyToken.verifyTokenJWT, upload.fields([{ name: 'avatar', maxCount: 1}, { name: 'background', maxCount: 1}]), multerErrorMiddleware, shopController.createShop);
 
 export default router;

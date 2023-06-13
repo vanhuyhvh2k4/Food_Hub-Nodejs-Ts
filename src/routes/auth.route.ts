@@ -23,20 +23,22 @@ router.post('/register', emailMiddleWare.checkEmail, authController.register);
 
 router.post('/login', authController.login);
 
-router.post('/social', emailMiddleWare.checkEmail, authController.socialSignIn);
+router.post('/social', authController.socialSignIn);
 
 router.post('/password', emailMiddleWare.checkEmail, authController.sendMail);
 
 //PRIVATE ROUTES //
 
-router.post('/', verifyToken.verifyTokenJWT, authController.verifyToken);
-
-router.post('/token', authController.refreshToken);
+router.patch('/password/:email', verifyToken.verifyTokenMail, authController.reset);
 
 router.patch('/profile/:userId', verifyToken.verifyTokenJWT, upload.single('avatar'), multerErrorMiddleware, authController.changeAvatar);
 
 router.put('/profile/:userId', verifyToken.verifyTokenJWT, authController.changeProfile);
 
-router.patch('/password/:email', verifyToken.verifyTokenMail, authController.reset);
+router.post('/token', authController.refreshToken);
+
+router.post('/', verifyToken.verifyTokenJWT, authController.verifyToken);
+
+router.get("/", verifyToken.verifyTokenJWT, authController.getCurrentUser);
 
 export default router;

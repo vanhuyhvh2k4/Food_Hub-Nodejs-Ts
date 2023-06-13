@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 const router = express.Router();
-import FoodController from '../controllers/foodController';
+import foodController from '../controllers/foodController';
 import verifyToken from '../middleware/verifyToken.middleware';
 import multerErrorMiddleware from '../middleware/multerError.middleware';
 
@@ -17,21 +17,17 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 const upload = multer({storage: multer.memoryStorage(), fileFilter});
 
-//PUBLIC ROUTES
+router.get("/shop/:shopId", verifyToken.verifyTokenJWT, foodController.getAllFoodOfShop);
 
-//PRIVATE ROUTES
+router.patch('/like/:foodId', verifyToken.verifyTokenJWT, foodController.changeLike);
 
-router.get("/", verifyToken.verifyTokenJWT, FoodController.getListFood);
+router.get('/like', verifyToken.verifyTokenJWT, foodController.getLikedFoods);
 
-router.get('/like', verifyToken.verifyTokenJWT, FoodController.getLikedFoods);
+router.get("/:foodId", foodController.getFoodInfo);
 
-router.get("/:foodId", FoodController.getFoodInfo);
+router.get("/", verifyToken.verifyTokenJWT, foodController.getListFood);
 
-router.patch('/like/:foodId', verifyToken.verifyTokenJWT, FoodController.changeLike);
-
-router.get("/shop/:shopId", verifyToken.verifyTokenJWT, FoodController.getAllFoodOfShop)
-
-router.post('/', verifyToken.verifyTokenJWT, upload.single('image'), multerErrorMiddleware, FoodController.createNewFood);
+router.post('/', verifyToken.verifyTokenJWT, upload.single('image'), multerErrorMiddleware, foodController.createNewFood);
 
 export default router;
 
